@@ -1,1 +1,0 @@
-# Clinical Diagnostics AI Architecture Notes
