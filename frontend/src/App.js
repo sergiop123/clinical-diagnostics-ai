@@ -2,22 +2,32 @@ import { useState } from "react";
 
 function App() {
   const [file, setFile] = useState(null);
+  const [modality, setModality] = useState("xray");
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   const handleUpload = async () => {
     if (!file) return;
     setLoading(true);
+    setError(null);
+    setResult(null);
+
     const formData = new FormData();
     formData.append("file", file);
+    formData.append("modality", modality);
 
-    const response = await fetch("http://127.0.0.1:8000/upload-image", {
-      method: "POST",
-      body: formData,
-    });
+    try {
+      const response = await fetch("http://127.0.0.1:8000/analyze-image", {
+        method: "POST",
+        body: formData,
+      });
+      const data = await response.json();
+      setResult(data);
+    } catch (err) {
+      setError("Could not connect to the backend. Make sure FastAPI is running.");
+    }
 
-    const data = await response.json();
-    setResult(data);
     setLoading(false);
   };
 
@@ -50,8 +60,24 @@ function App() {
         <div style={styles.card}>
           <h2 style={styles.cardTitle}>Upload Image</h2>
           <p style={styles.cardDesc}>
-            Supported formats: X-ray, CT, MRI (PNG, JPG, DICOM)
+            Supported formats: X-ray, CT, MRI (PNG, JPG)
           </p>
+
+          {/* Modality selector */}
+          <div style={styles.modalityRow}>
+            {["xray", "ct", "mri"].map((m) => (
+              <button
+                key={m}
+                onClick={() => setModality(m)}
+                style={{
+                  ...styles.modalityBtn,
+                  ...(modality === m ? styles.modalityBtnActive : {}),
+                }}
+              >
+                {m === "xray" ? "🫁 X-Ray" : m === "ct" ? "🔬 CT Scan" : "🧠 MRI"}
+              </button>
+            ))}
+          </div>
 
           <input
             type="file"
@@ -66,27 +92,43 @@ function App() {
 
           <button
             onClick={handleUpload}
-            style={styles.button}
+            style={{
+              ...styles.button,
+              opacity: !file || loading ? 0.6 : 1,
+              cursor: !file || loading ? "not-allowed" : "pointer",
+            }}
             disabled={!file || loading}
           >
             {loading ? "Analyzing..." : "Analyze Image"}
           </button>
         </div>
 
+        {/* Error message */}
+        {error && (
+          <div style={styles.errorCard}>
+            ❌ {error}
+          </div>
+        )}
+
+        {/* Results */}
         {result && (
           <div style={styles.resultCard}>
-            <h2 style={styles.cardTitle}>Results</h2>
+            <h2 style={styles.cardTitle}>Analysis Results</h2>
             <div style={styles.resultRow}>
               <span style={styles.resultLabel}>Filename</span>
               <span style={styles.resultValue}>{result.filename}</span>
             </div>
             <div style={styles.resultRow}>
-              <span style={styles.resultLabel}>File Size</span>
-              <span style={styles.resultValue}>{result.size_bytes} bytes</span>
+              <span style={styles.resultLabel}>Modality</span>
+              <span style={styles.resultValue}>{result.modality}</span>
             </div>
             <div style={styles.resultRow}>
-              <span style={styles.resultLabel}>Type</span>
-              <span style={styles.resultValue}>{result.content_type}</span>
+              <span style={styles.resultLabel}>Finding</span>
+              <span style={styles.resultValue}>{result.finding}</span>
+            </div>
+            <div style={styles.resultRow}>
+              <span style={styles.resultLabel}>Confidence</span>
+              <span style={styles.resultValue}>{result.confidence}%</span>
             </div>
             <div style={styles.resultRow}>
               <span style={styles.resultLabel}>Status</span>
@@ -96,8 +138,8 @@ function App() {
         )}
 
         <div style={styles.disclaimer}>
-          ⚠️ For educational purposes only. Not a medical diagnosis. All results
-          must be reviewed by a licensed medical professional.
+          ⚠️ For educational purposes only. Not a medical diagnosis. All
+          results must be reviewed by a licensed medical professional.
         </div>
       </div>
     </div>
@@ -187,6 +229,25 @@ const styles = {
     fontSize: "13px",
     marginBottom: "20px",
   },
+  modalityRow: {
+    display: "flex",
+    gap: "10px",
+    marginBottom: "20px",
+  },
+  modalityBtn: {
+    padding: "8px 18px",
+    borderRadius: "6px",
+    border: "2px solid #1B5287",
+    backgroundColor: "white",
+    color: "#1B5287",
+    cursor: "pointer",
+    fontSize: "13px",
+    fontWeight: "500",
+  },
+  modalityBtnActive: {
+    backgroundColor: "#1B5287",
+    color: "white",
+  },
   fileInput: {
     display: "block",
     marginBottom: "12px",
@@ -205,6 +266,15 @@ const styles = {
     fontSize: "15px",
     fontWeight: "bold",
     cursor: "pointer",
+  },
+  errorCard: {
+    backgroundColor: "#fff0f0",
+    border: "1px solid #ff4444",
+    borderRadius: "8px",
+    padding: "14px 18px",
+    fontSize: "13px",
+    color: "#cc0000",
+    marginBottom: "24px",
   },
   resultCard: {
     backgroundColor: "white",
