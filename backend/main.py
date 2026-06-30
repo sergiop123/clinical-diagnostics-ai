@@ -1,8 +1,10 @@
 from fastapi import FastAPI, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from transformers import pipeline
 from PIL import Image
 from diagnosis import get_differential_diagnosis
+from typing import List
 import io
 
 app = FastAPI(title="Clinical Diagnostics AI")
@@ -67,4 +69,50 @@ async def analyze_image(
         "differentials": diagnosis["differentials"],
         "disclaimer": diagnosis["disclaimer"],
         "message": "Analysis complete",
+    }
+
+
+@app.post("/batch-analyze")
+async def batch_analyze(
+    files: List[UploadFile] = File(...),
+    modality: str = Form("xray")
+):
+    results = []
+
+    for file in files:
+        try:
+            contents = await file.read()
+            image = Image.open(io.BytesIO(contents)).convert("RGB")
+
+            selected_model = models.get(modality, models["xray"])
+            ai_results = selected_model(image)
+            top_result = ai_results[0]
+
+            finding = top_result["label"]
+            confidence = round(top_result["score"] * 100, 2)
+            diagnosis = get_differential_diagnosis(finding)
+
+            results.append({
+                "filename": file.filename,
+                "modality": modality.upper(),
+                "finding": finding,
+                "confidence": confidence,
+                "differentials": diagnosis["differentials"],
+                "status": "Success",
+            })
+
+        except Exception as e:
+            results.append({
+                "filename": file.filename,
+                "modality": modality.upper(),
+                "finding": "Error",
+                "confidence": 0,
+                "differentials": [],
+                "status": f"Failed: {str(e)}",
+            })
+
+    return {
+        "total": len(results),
+        "results": results,
+        "disclaimer": "For educational purposes only. Not a medical diagnosis.",
     }
