@@ -57,6 +57,7 @@ function App() {
           </p>
         </div>
 
+        {/* Upload card */}
         <div style={styles.card}>
           <h2 style={styles.cardTitle}>Upload Image</h2>
           <p style={styles.cardDesc}>
@@ -103,44 +104,71 @@ function App() {
           </button>
         </div>
 
-        {/* Error message */}
+        {/* Error */}
         {error && (
-          <div style={styles.errorCard}>
-            ❌ {error}
-          </div>
+          <div style={styles.errorCard}>❌ {error}</div>
         )}
 
         {/* Results */}
         {result && (
-          <div style={styles.resultCard}>
-            <h2 style={styles.cardTitle}>Analysis Results</h2>
-            <div style={styles.resultRow}>
-              <span style={styles.resultLabel}>Filename</span>
-              <span style={styles.resultValue}>{result.filename}</span>
+          <>
+            {/* Analysis result card */}
+            <div style={styles.resultCard}>
+              <h2 style={styles.cardTitle}>Analysis Results</h2>
+              <div style={styles.resultRow}>
+                <span style={styles.resultLabel}>Filename</span>
+                <span style={styles.resultValue}>{result.filename}</span>
+              </div>
+              <div style={styles.resultRow}>
+                <span style={styles.resultLabel}>Modality</span>
+                <span style={styles.resultValue}>{result.modality}</span>
+              </div>
+              <div style={styles.resultRow}>
+                <span style={styles.resultLabel}>Finding</span>
+                <span style={styles.resultValue}>{result.finding}</span>
+              </div>
+              <div style={styles.resultRow}>
+                <span style={styles.resultLabel}>Confidence</span>
+                <span style={styles.resultValue}>{result.confidence}%</span>
+              </div>
+              <div style={styles.resultRow}>
+                <span style={styles.resultLabel}>Status</span>
+                <span style={styles.resultValue}>{result.message}</span>
+              </div>
             </div>
-            <div style={styles.resultRow}>
-              <span style={styles.resultLabel}>Modality</span>
-              <span style={styles.resultValue}>{result.modality}</span>
+
+            {/* Differential diagnosis card */}
+            <div style={styles.diagnosisCard}>
+              <h2 style={styles.cardTitle}>
+                🩺 Differential Diagnosis Suggestions
+              </h2>
+              <p style={styles.cardDesc}>
+                Based on the detected finding, the following conditions should
+                be considered by the medical team:
+              </p>
+              <ul style={styles.diagnosisList}>
+                {result.differentials.map((d, i) => (
+                  <li key={i} style={styles.diagnosisItem}>
+                    <span style={styles.diagnosisBullet}>→</span>
+                    {d}
+                  </li>
+                ))}
+              </ul>
             </div>
-            <div style={styles.resultRow}>
-              <span style={styles.resultLabel}>Finding</span>
-              <span style={styles.resultValue}>{result.finding}</span>
+
+            {/* Disclaimer */}
+            <div style={styles.disclaimer}>
+              {result.disclaimer}
             </div>
-            <div style={styles.resultRow}>
-              <span style={styles.resultLabel}>Confidence</span>
-              <span style={styles.resultValue}>{result.confidence}%</span>
-            </div>
-            <div style={styles.resultRow}>
-              <span style={styles.resultLabel}>Status</span>
-              <span style={styles.resultValue}>{result.message}</span>
-            </div>
-          </div>
+          </>
         )}
 
-        <div style={styles.disclaimer}>
-          ⚠️ For educational purposes only. Not a medical diagnosis. All
-          results must be reviewed by a licensed medical professional.
-        </div>
+        {!result && (
+          <div style={styles.disclaimer}>
+            ⚠️ For educational purposes only. Not a medical diagnosis. All
+            results must be reviewed by a licensed medical professional.
+          </div>
+        )}
       </div>
     </div>
   );
@@ -177,9 +205,7 @@ const styles = {
     fontSize: "12px",
     marginTop: "4px",
   },
-  nav: {
-    flex: 1,
-  },
+  nav: { flex: 1 },
   navItem: {
     color: "white",
     padding: "10px 12px",
@@ -198,9 +224,7 @@ const styles = {
     padding: "40px",
     flex: 1,
   },
-  header: {
-    marginBottom: "32px",
-  },
+  header: { marginBottom: "32px" },
   title: {
     fontSize: "28px",
     color: "#1B5287",
@@ -248,10 +272,7 @@ const styles = {
     backgroundColor: "#1B5287",
     color: "white",
   },
-  fileInput: {
-    display: "block",
-    marginBottom: "12px",
-  },
+  fileInput: { display: "block", marginBottom: "12px" },
   fileName: {
     fontSize: "13px",
     color: "#555",
@@ -290,14 +311,38 @@ const styles = {
     padding: "10px 0",
     borderBottom: "1px solid #f0f0f0",
   },
-  resultLabel: {
-    color: "#888",
-    fontSize: "14px",
-  },
+  resultLabel: { color: "#888", fontSize: "14px" },
   resultValue: {
     color: "#1B5287",
     fontWeight: "bold",
     fontSize: "14px",
+  },
+  diagnosisCard: {
+    backgroundColor: "white",
+    borderRadius: "10px",
+    padding: "28px",
+    marginBottom: "24px",
+    borderTop: "4px solid #FFB700",
+    boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+  },
+  diagnosisList: {
+    listStyle: "none",
+    padding: 0,
+    margin: 0,
+  },
+  diagnosisItem: {
+    display: "flex",
+    alignItems: "center",
+    gap: "10px",
+    padding: "10px 0",
+    borderBottom: "1px solid #f0f0f0",
+    fontSize: "14px",
+    color: "#333",
+  },
+  diagnosisBullet: {
+    color: "#FFB700",
+    fontWeight: "bold",
+    fontSize: "16px",
   },
   disclaimer: {
     backgroundColor: "#FFF8E6",
@@ -306,6 +351,7 @@ const styles = {
     padding: "14px 18px",
     fontSize: "13px",
     color: "#8A6000",
+    marginBottom: "24px",
   },
 };
 
