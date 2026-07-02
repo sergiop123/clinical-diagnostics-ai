@@ -9,6 +9,7 @@ function App() {
   const [batchResults, setBatchResults] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [history, setHistory] = useState([]);
 
   const handleSingleUpload = async () => {
     if (!file) return;
@@ -27,6 +28,10 @@ function App() {
       });
       const data = await response.json();
       setResult(data);
+      setHistory(prev => [...prev, {
+        ...data,
+        timestamp: new Date().toLocaleString()
+      }]);
     } catch (err) {
       setError("Could not connect to the backend. Make sure FastAPI is running.");
     }
@@ -52,6 +57,12 @@ function App() {
       });
       const data = await response.json();
       setBatchResults(data);
+      data.results.forEach(r => {
+        setHistory(prev => [...prev, {
+          ...r,
+          timestamp: new Date().toLocaleString()
+        }]);
+      });
     } catch (err) {
       setError("Could not connect to the backend. Make sure FastAPI is running.");
     }
@@ -391,14 +402,87 @@ function App() {
           <>
             <div style={styles.header}>
               <h1 style={styles.title}>Dashboard</h1>
-              <p style={styles.subtitle}>Coming soon — upload history and analytics</p>
-            </div>
-            <div style={styles.card}>
-              <h2 style={styles.cardTitle}>📊 Analytics Dashboard</h2>
-              <p style={styles.cardDesc}>
-                This section will display upload history, findings distribution,
-                and batch results once database integration is complete.
+              <p style={styles.subtitle}>
+                Session analytics — {history.length} image{history.length !== 1 ? "s" : ""} analyzed
               </p>
+            </div>
+
+            {/* Metric cards */}
+            <div style={styles.metricsRow}>
+              <div style={styles.metricCard}>
+                <div style={styles.metricNumber}>{history.length}</div>
+                <div style={styles.metricLabel}>Total Analyzed</div>
+              </div>
+              <div style={styles.metricCard}>
+                <div style={styles.metricNumber}>
+                  {history.filter(h => h.modality === "XRAY").length}
+                </div>
+                <div style={styles.metricLabel}>Chest X-Rays</div>
+              </div>
+              <div style={styles.metricCard}>
+                <div style={styles.metricNumber}>
+                  {history.filter(h => h.modality === "MRI").length}
+                </div>
+                <div style={styles.metricLabel}>Brain MRIs</div>
+              </div>
+              <div style={styles.metricCard}>
+                <div style={styles.metricNumber}>
+                  {history.filter(h => h.modality === "CT").length}
+                </div>
+                <div style={styles.metricLabel}>CT Scans</div>
+              </div>
+            </div>
+
+            {/* History table */}
+            {history.length > 0 ? (
+              <div style={styles.resultCard}>
+                <h2 style={styles.cardTitle}>Analysis History</h2>
+                <div style={styles.tableWrapper}>
+                  <table style={styles.table}>
+                    <thead>
+                      <tr style={styles.tableHeader}>
+                        <th style={styles.th}>#</th>
+                        <th style={styles.th}>Timestamp</th>
+                        <th style={styles.th}>Filename</th>
+                        <th style={styles.th}>Modality</th>
+                        <th style={styles.th}>Finding</th>
+                        <th style={styles.th}>Confidence</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {history.map((h, i) => (
+                        <tr
+                          key={i}
+                          style={{
+                            ...styles.tableRow,
+                            backgroundColor: i % 2 === 0 ? "#f9f9f9" : "white",
+                          }}
+                        >
+                          <td style={styles.td}>{i + 1}</td>
+                          <td style={styles.td}>{h.timestamp}</td>
+                          <td style={styles.td}>{h.filename}</td>
+                          <td style={styles.td}>{h.modality}</td>
+                          <td style={styles.td}>{h.finding}</td>
+                          <td style={styles.td}>{h.confidence}%</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            ) : (
+              <div style={styles.card}>
+                <h2 style={styles.cardTitle}>📊 No data yet</h2>
+                <p style={styles.cardDesc}>
+                  Analyze images using Single Upload or Batch Processing and
+                  results will appear here automatically.
+                </p>
+              </div>
+            )}
+
+            <div style={styles.disclaimer}>
+              ⚠️ Dashboard shows current session only. Persistent history will
+              be available after database integration is complete.
             </div>
           </>
         )}
@@ -642,6 +726,30 @@ navIcon: {
     fontSize: "13px",
     color: "#8A6000",
     marginBottom: "24px",
+  },
+  metricsRow: {
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr 1fr 1fr",
+    gap: "16px",
+    marginBottom: "24px",
+  },
+  metricCard: {
+    backgroundColor: "white",
+    borderRadius: "10px",
+    padding: "24px",
+    textAlign: "center",
+    borderTop: "4px solid #FFB700",
+    boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+  },
+  metricNumber: {
+    fontSize: "36px",
+    fontWeight: "bold",
+    color: "#1B5287",
+    marginBottom: "8px",
+  },
+  metricLabel: {
+    fontSize: "13px",
+    color: "#888",
   },
 };
 
