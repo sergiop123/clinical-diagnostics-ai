@@ -64,78 +64,103 @@ DIFFERENTIAL_DIAGNOSES = {
         "Traumatic Fracture",
         "Pathological Fracture",
         "Compression Fracture",
-    
     ],
     "infiltration": [
-    "Bronchitis",
-    "Pneumonia",
-    "Pulmonary Edema",
-    "Aspiration Pneumonitis",
-    "Interstitial Lung Disease",
+        "Bronchitis",
+        "Pneumonia",
+        "Pulmonary Edema",
+        "Aspiration Pneumonitis",
+        "Interstitial Lung Disease",
     ],
     "atelectasis": [
-    "Mucus Plugging",
-    "Endobronchial Obstruction",
-    "Post-surgical Atelectasis",
-    "Pleural Effusion",
-    "Pneumothorax",
+        "Mucus Plugging",
+        "Endobronchial Obstruction",
+        "Post-surgical Atelectasis",
+        "Pleural Effusion",
+        "Pneumothorax",
     ],
     "effusion": [
-    "Congestive Heart Failure",
-    "Parapneumonic Effusion",
-    "Malignant Pleural Effusion",
-    "Tuberculosis",
-    "Pulmonary Embolism",
+        "Congestive Heart Failure",
+        "Parapneumonic Effusion",
+        "Malignant Pleural Effusion",
+        "Tuberculosis",
+        "Pulmonary Embolism",
     ],
     "emphysema": [
-    "Chronic Obstructive Pulmonary Disease (COPD)",
-    "Alpha-1 Antitrypsin Deficiency",
-    "Chronic Bronchitis",
-    "Asthma",
+        "Chronic Obstructive Pulmonary Disease (COPD)",
+        "Alpha-1 Antitrypsin Deficiency",
+        "Chronic Bronchitis",
+        "Asthma",
     ],
     "fibrosis": [
-    "Idiopathic Pulmonary Fibrosis",
-    "Hypersensitivity Pneumonitis",
-    "Sarcoidosis",
-    "Connective Tissue Disease",
+        "Idiopathic Pulmonary Fibrosis",
+        "Hypersensitivity Pneumonitis",
+        "Sarcoidosis",
+        "Connective Tissue Disease",
     ],
     "consolidation": [
-    "Bacterial Pneumonia",
-    "Lung Abscess",
-    "Pulmonary Infarction",
-    "Bronchioloalveolar Carcinoma",
+        "Bacterial Pneumonia",
+        "Lung Abscess",
+        "Pulmonary Infarction",
+        "Bronchioloalveolar Carcinoma",
     ],
     "edema": [
-    "Congestive Heart Failure",
-    "Acute Respiratory Distress Syndrome (ARDS)",
-    "Neurogenic Pulmonary Edema",
-    "Fluid Overload",
+        "Congestive Heart Failure",
+        "Acute Respiratory Distress Syndrome (ARDS)",
+        "Neurogenic Pulmonary Edema",
+        "Fluid Overload",
     ],
     "pneumothorax": [
-    "Spontaneous Pneumothorax",
-    "Traumatic Pneumothorax",
-    "Tension Pneumothorax",
-    "Secondary Pneumothorax from COPD",
+        "Spontaneous Pneumothorax",
+        "Traumatic Pneumothorax",
+        "Tension Pneumothorax",
+        "Secondary Pneumothorax from COPD",
     ],
     "pleural thickening": [
-    "Asbestos-related Pleural Disease",
-    "Previous Empyema",
-    "Tuberculosis",
-    "Malignant Mesothelioma",
+        "Asbestos-related Pleural Disease",
+        "Previous Empyema",
+        "Tuberculosis",
+        "Malignant Mesothelioma",
     ],
     "hernia": [
-    "Hiatal Hernia",
-    "Diaphragmatic Hernia",
-    "Bochdalek Hernia",
-    "Morgagni Hernia",
+        "Hiatal Hernia",
+        "Diaphragmatic Hernia",
+        "Bochdalek Hernia",
+        "Morgagni Hernia",
     ],
     "nodule": [
-    "Benign Pulmonary Nodule",
-    "Primary Lung Cancer",
-    "Metastatic Nodule",
-    "Granuloma",
-    "Hamartoma",
-],
+        "Benign Pulmonary Nodule",
+        "Primary Lung Cancer",
+        "Metastatic Nodule",
+        "Granuloma",
+        "Hamartoma",
+    ],
+    "meningioma tumor": [
+        "Benign Meningioma",
+        "Malignant Meningioma",
+        "Schwannoma",
+        "Metastatic Brain Tumor",
+        "Hemangiopericytoma",
+    ],
+    "glioma tumor": [
+        "Low-grade Glioma",
+        "High-grade Glioma (GBM)",
+        "Oligodendroglioma",
+        "Astrocytoma",
+        "Ependymoma",
+    ],
+    "pituitary tumor": [
+        "Pituitary Adenoma",
+        "Craniopharyngioma",
+        "Rathke Cleft Cyst",
+        "Pituitary Carcinoma",
+        "Meningioma",
+    ],
+    "no tumor": [
+        "Normal Brain MRI",
+        "No significant findings detected",
+        "Routine follow-up recommended",
+    ],
 }
 
 XRAY_FINDINGS = [
@@ -178,10 +203,6 @@ DISCLAIMER = (
 
 
 def map_to_medical_finding(confidence: float, modality: str) -> str:
-    """
-    Maps AI confidence score to a realistic medical finding
-    based on the selected modality.
-    """
     import random
     random.seed(int(confidence * 1000))
 
@@ -209,9 +230,6 @@ def map_to_medical_finding(confidence: float, modality: str) -> str:
 
 
 def get_differential_diagnosis(finding: str):
-    """
-    Takes a medical finding and returns possible differential diagnoses.
-    """
     finding_lower = finding.lower()
 
     for key in DIFFERENTIAL_DIAGNOSES:

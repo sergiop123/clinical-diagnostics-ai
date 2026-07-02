@@ -6,9 +6,9 @@ from typing import List
 import io
 import torch
 import timm
-import json
 from huggingface_hub import hf_hub_download
 from torchvision import transforms
+from transformers import pipeline
 
 app = FastAPI(title="Clinical Diagnostics AI")
 
@@ -27,9 +27,9 @@ XRAY_LABELS = [
     "Pleural_Thickening", "Hernia"
 ]
 
-print("Loading medical AI model... please wait")
+print("Loading medical AI models... please wait")
 
-# Download and load the chest xray model
+# Load chest X-ray model
 model_path = hf_hub_download(
     repo_id="taheera/vit-in1k-chestxray14",
     filename="pytorch_model.bin"
@@ -40,19 +40,24 @@ state_dict = torch.load(model_path, map_location="cpu")
 xray_model.load_state_dict(state_dict)
 xray_model.eval()
 
-# Image preprocessing for the model
-preprocess = transforms.Compose([
+xray_preprocess = transforms.Compose([
     transforms.Resize((224, 224)),
     transforms.ToTensor(),
     transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5]),
 ])
 
-print("Medical AI model loaded successfully")
+# Load brain MRI model
+print("Loading Brain MRI model...")
+mri_model = pipeline(
+    "image-classification",
+    model="NeuronZero/MRI-Reader"
+)
+
+print("All medical AI models loaded successfully")
 
 
 def analyze_xray(image: Image.Image):
-    """Run the chest xray model on an image."""
-    tensor = preprocess(image).unsqueeze(0)
+    tensor = xray_preprocess(image).unsqueeze(0)
     with torch.no_grad():
         outputs = xray_model(tensor)
         probabilities = torch.sigmoid(outputs)[0]
@@ -65,6 +70,11 @@ def analyze_xray(image: Image.Image):
         })
 
     results.sort(key=lambda x: x["score"], reverse=True)
+    return results
+
+
+def analyze_mri(image: Image.Image):
+    results = mri_model(image)
     return results
 
 
@@ -97,10 +107,17 @@ async def analyze_image(
         top_result = results[0]
         finding = top_result["label"].replace("_", " ")
         confidence = round(top_result["score"] * 100, 2)
+
+    elif modality == "mri":
+        results = analyze_mri(image)
+        top_result = results[0]
+        finding = top_result["label"].replace("_", " ")
+        confidence = round(top_result["score"] * 100, 2)
+
     else:
-        from transformers import pipeline
-        general_model = pipeline("image-classification", model="google/vit-base-patch16-224")
-        results = general_model(image)
+        # CT — medical finding mapping
+        general = pipeline("image-classification", model="google/vit-base-patch16-224")
+        results = general(image)
         top_result = results[0]
         confidence = round(top_result["score"] * 100, 2)
         finding = map_to_medical_finding(confidence, modality)
@@ -135,10 +152,16 @@ async def batch_analyze(
                 top_result = ai_results[0]
                 finding = top_result["label"].replace("_", " ")
                 confidence = round(top_result["score"] * 100, 2)
+
+            elif modality == "mri":
+                ai_results = analyze_mri(image)
+                top_result = ai_results[0]
+                finding = top_result["label"].replace("_", " ")
+                confidence = round(top_result["score"] * 100, 2)
+
             else:
-                from transformers import pipeline
-                general_model = pipeline("image-classification", model="google/vit-base-patch16-224")
-                ai_results = general_model(image)
+                general = pipeline("image-classification", model="google/vit-base-patch16-224")
+                ai_results = general(image)
                 top_result = ai_results[0]
                 confidence = round(top_result["score"] * 100, 2)
                 finding = map_to_medical_finding(confidence, modality)

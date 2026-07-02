@@ -60,18 +60,33 @@ function App() {
 
   const ModalitySelector = () => (
     <div style={styles.modalityRow}>
-      {["xray", "ct", "mri"].map((m) => (
-        <button
-          key={m}
-          onClick={() => setModality(m)}
-          style={{
-            ...styles.modalityBtn,
-            ...(modality === m ? styles.modalityBtnActive : {}),
-          }}
-        >
-          {m === "xray" ? "🫁 X-Ray" : m === "ct" ? "🔬 CT Scan" : "🧠 MRI"}
-        </button>
-      ))}
+      <button
+        onClick={() => setModality("xray")}
+        style={{
+          ...styles.modalityBtn,
+          ...(modality === "xray" ? styles.modalityBtnActive : {}),
+        }}
+      >
+        🫁 Chest X-Ray
+      </button>
+      <button
+        onClick={() => setModality("mri")}
+        style={{
+          ...styles.modalityBtn,
+          ...(modality === "mri" ? styles.modalityBtnActive : {}),
+        }}
+      >
+        🧠 Brain MRI
+      </button>
+      <button
+        onClick={() => setModality("ct")}
+        style={{
+          ...styles.modalityBtn,
+          ...(modality === "ct" ? styles.modalityBtnActive : {}),
+        }}
+      >
+        🔬 CT Scan
+      </button>
     </div>
   );
 
@@ -182,7 +197,7 @@ function App() {
             <div style={styles.card}>
               <h2 style={styles.cardTitle}>Upload Image</h2>
               <p style={styles.cardDesc}>
-                Supported formats: X-ray, CT, MRI (PNG, JPG)
+                Chest X-Ray (14 conditions) · Brain MRI (tumor classification) · CT Scan (indicative only)
               </p>
               <ModalitySelector />
               <input
