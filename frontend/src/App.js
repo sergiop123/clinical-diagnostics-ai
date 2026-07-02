@@ -80,9 +80,13 @@ function App() {
       {/* Sidebar */}
       <div style={styles.sidebar}>
         <div style={styles.logoArea}>
-          <div style={styles.logoText}>Jade Global</div>
-          <div style={styles.logoSub}>Clinical Diagnostics AI</div>
-        </div>
+  <img 
+    src="/Jade Global - Logo With TM-Reverse.png" 
+    alt="Jade Global" 
+    style={{width: "180px", marginBottom: "6px"}}
+  />
+  <div style={styles.logoSub}>Clinical Diagnostics AI</div>
+</div>
         <nav style={styles.nav}>
           <div
             onClick={() => setPage("home")}
@@ -91,7 +95,7 @@ function App() {
               ...(page === "home" ? styles.navItemActive : {}),
             }}
           >
-            🏠 Home
+            <span style={styles.navIcon}>⊞</span> Home
           </div>
           <div
             onClick={() => setPage("single")}
@@ -100,7 +104,7 @@ function App() {
               ...(page === "single" ? styles.navItemActive : {}),
             }}
           >
-            🖼️ Single Upload
+            <span style={styles.navIcon}>↑</span> Single Upload
           </div>
           <div
             onClick={() => setPage("batch")}
@@ -109,7 +113,7 @@ function App() {
               ...(page === "batch" ? styles.navItemActive : {}),
             }}
           >
-            📁 Batch Processing
+            <span style={styles.navIcon}>❏</span> Batch Processing
           </div>
           <div
             onClick={() => setPage("dashboard")}
@@ -118,10 +122,14 @@ function App() {
               ...(page === "dashboard" ? styles.navItemActive : {}),
             }}
           >
-            📊 Dashboard
+            <span style={styles.navIcon}>◫</span> Dashboard
           </div>
         </nav>
-        <div style={styles.trademark}>© 2026 Jade Global Inc.</div>
+        <div style={styles.trademark}>
+          <div style={{color: "rgba(255,255,255,0.6)", fontSize: "12px", fontWeight: "500", marginBottom: "2px"}}>Clinical Diagnostics AI™</div>
+          <div>© 2026 Jade Global, Inc.</div>
+          <div>All rights reserved.</div>
+        </div>
       </div>
 
       {/* Main content */}
@@ -392,7 +400,7 @@ const styles = {
     backgroundColor: "#f4f6f9",
   },
   sidebar: {
-    width: "240px",
+    width: "260px",
     backgroundColor: "#1B5287",
     display: "flex",
     flexDirection: "column",
@@ -425,8 +433,13 @@ const styles = {
     fontSize: "14px",
   },
   navItemActive: {
-    backgroundColor: "rgba(255,183,0,0.2)",
-    borderLeft: "3px solid #FFB700",
+    backgroundColor: "#FFB700",
+    color: "#1B5287",
+    fontWeight: "500",
+  },
+navIcon: {
+    marginRight: "8px",
+    fontSize: "14px",
   },
   trademark: {
     color: "rgba(255,255,255,0.4)",
@@ -434,7 +447,7 @@ const styles = {
     textAlign: "center",
   },
   main: {
-    marginLeft: "240px",
+    marginLeft: "260px",
     padding: "40px",
     flex: 1,
   },
