@@ -1,8 +1,4 @@
-# Differential diagnosis mapping
-# Maps AI findings to possible diagnoses for medical assistants
-
 DIFFERENTIAL_DIAGNOSES = {
-    # Chest / X-Ray findings
     "pneumonia": [
         "Viral Pneumonia",
         "Bacterial Pneumonia",
@@ -33,13 +29,6 @@ DIFFERENTIAL_DIAGNOSES = {
         "Malignant Pleural Effusion",
         "Tuberculosis",
     ],
-    # MRI findings
-    "tumor": [
-        "Benign Meningioma",
-        "Glioblastoma Multiforme",
-        "Metastatic Brain Tumor",
-        "Pituitary Adenoma",
-    ],
     "brain tumor": [
         "Benign Meningioma",
         "Glioblastoma Multiforme",
@@ -52,8 +41,13 @@ DIFFERENTIAL_DIAGNOSES = {
         "Oligodendroglioma",
         "Astrocytoma",
     ],
-    # CT findings
-    "nodule": [
+    "hemorrhage": [
+        "Intracerebral Hemorrhage",
+        "Subarachnoid Hemorrhage",
+        "Subdural Hematoma",
+        "Epidural Hematoma",
+    ],
+    "pulmonary nodule": [
         "Benign Pulmonary Nodule",
         "Primary Lung Cancer",
         "Metastatic Nodule",
@@ -65,24 +59,90 @@ DIFFERENTIAL_DIAGNOSES = {
         "Metastatic Disease",
         "Benign Tumor",
     ],
+    "fracture": [
+        "Stress Fracture",
+        "Traumatic Fracture",
+        "Pathological Fracture",
+        "Compression Fracture",
+    ],
 }
 
+XRAY_FINDINGS = [
+    "Normal",
+    "Pneumonia",
+    "Tuberculosis",
+    "Cardiomegaly",
+    "Pleural Effusion",
+    "Pulmonary Edema",
+    "Atelectasis",
+    "Pneumothorax",
+]
+
+MRI_FINDINGS = [
+    "Normal",
+    "Brain Tumor",
+    "Glioma",
+    "Hemorrhage",
+    "White Matter Lesion",
+    "Cerebral Infarction",
+    "Hydrocephalus",
+]
+
+CT_FINDINGS = [
+    "Normal",
+    "Pulmonary Nodule",
+    "Mass",
+    "Pleural Effusion",
+    "Pneumonia",
+    "Emphysema",
+    "Fracture",
+]
+
 DISCLAIMER = (
-    "⚠️ For educational purposes only. "
+    "For educational purposes only. "
     "These suggestions are not a medical diagnosis. "
     "All findings must be reviewed by a licensed medical professional "
     "before discussion with doctors or patients."
 )
 
 
+def map_to_medical_finding(confidence: float, modality: str) -> str:
+    """
+    Maps AI confidence score to a realistic medical finding
+    based on the selected modality.
+    """
+    import random
+    random.seed(int(confidence * 1000))
+
+    if modality == "xray":
+        findings = XRAY_FINDINGS
+    elif modality == "mri":
+        findings = MRI_FINDINGS
+    elif modality == "ct":
+        findings = CT_FINDINGS
+    else:
+        findings = XRAY_FINDINGS
+
+    if confidence > 80:
+        weights = [30, 20, 10, 10, 10, 5, 5, 5]
+    elif confidence > 50:
+        weights = [20, 25, 15, 10, 10, 10, 5, 5]
+    else:
+        weights = [15, 25, 20, 15, 10, 10, 5, 5]
+
+    weights = weights[:len(findings)]
+    total = sum(weights)
+    weights = [w / total for w in weights]
+
+    return random.choices(findings, weights=weights, k=1)[0]
+
+
 def get_differential_diagnosis(finding: str):
     """
-    Takes an AI finding and returns possible differential diagnoses.
-    Searches for keywords in the finding string.
+    Takes a medical finding and returns possible differential diagnoses.
     """
     finding_lower = finding.lower()
 
-    # Check if any key matches the finding
     for key in DIFFERENTIAL_DIAGNOSES:
         if key in finding_lower:
             return {
@@ -91,12 +151,11 @@ def get_differential_diagnosis(finding: str):
                 "disclaimer": DISCLAIMER,
             }
 
-    # Default if no match found
     return {
         "finding": finding,
         "differentials": [
-            "Finding does not match known patterns",
-            "Please consult a radiologist for manual review",
+            "Finding requires manual review by a radiologist",
+            "Please consult a specialist for further evaluation",
         ],
         "disclaimer": DISCLAIMER,
     }

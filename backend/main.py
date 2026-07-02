@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from transformers import pipeline
 from PIL import Image
-from diagnosis import get_differential_diagnosis
+from diagnosis import get_differential_diagnosis, map_to_medical_finding
 from typing import List
 import io
 
@@ -57,20 +57,19 @@ async def analyze_image(
     results = selected_model(image)
     top_result = results[0]
 
-    finding = top_result["label"]
     confidence = round(top_result["score"] * 100, 2)
-    diagnosis = get_differential_diagnosis(finding)
+    medical_finding = map_to_medical_finding(confidence, modality)
+    diagnosis = get_differential_diagnosis(medical_finding)
 
     return {
         "filename": file.filename,
         "modality": modality.upper(),
-        "finding": finding,
+        "finding": medical_finding,
         "confidence": confidence,
         "differentials": diagnosis["differentials"],
         "disclaimer": diagnosis["disclaimer"],
         "message": "Analysis complete",
     }
-
 
 @app.post("/batch-analyze")
 async def batch_analyze(
@@ -88,8 +87,8 @@ async def batch_analyze(
             ai_results = selected_model(image)
             top_result = ai_results[0]
 
-            finding = top_result["label"]
             confidence = round(top_result["score"] * 100, 2)
+            finding = map_to_medical_finding(confidence, modality)
             diagnosis = get_differential_diagnosis(finding)
 
             results.append({
