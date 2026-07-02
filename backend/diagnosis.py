@@ -64,7 +64,78 @@ DIFFERENTIAL_DIAGNOSES = {
         "Traumatic Fracture",
         "Pathological Fracture",
         "Compression Fracture",
+    
     ],
+    "infiltration": [
+    "Bronchitis",
+    "Pneumonia",
+    "Pulmonary Edema",
+    "Aspiration Pneumonitis",
+    "Interstitial Lung Disease",
+    ],
+    "atelectasis": [
+    "Mucus Plugging",
+    "Endobronchial Obstruction",
+    "Post-surgical Atelectasis",
+    "Pleural Effusion",
+    "Pneumothorax",
+    ],
+    "effusion": [
+    "Congestive Heart Failure",
+    "Parapneumonic Effusion",
+    "Malignant Pleural Effusion",
+    "Tuberculosis",
+    "Pulmonary Embolism",
+    ],
+    "emphysema": [
+    "Chronic Obstructive Pulmonary Disease (COPD)",
+    "Alpha-1 Antitrypsin Deficiency",
+    "Chronic Bronchitis",
+    "Asthma",
+    ],
+    "fibrosis": [
+    "Idiopathic Pulmonary Fibrosis",
+    "Hypersensitivity Pneumonitis",
+    "Sarcoidosis",
+    "Connective Tissue Disease",
+    ],
+    "consolidation": [
+    "Bacterial Pneumonia",
+    "Lung Abscess",
+    "Pulmonary Infarction",
+    "Bronchioloalveolar Carcinoma",
+    ],
+    "edema": [
+    "Congestive Heart Failure",
+    "Acute Respiratory Distress Syndrome (ARDS)",
+    "Neurogenic Pulmonary Edema",
+    "Fluid Overload",
+    ],
+    "pneumothorax": [
+    "Spontaneous Pneumothorax",
+    "Traumatic Pneumothorax",
+    "Tension Pneumothorax",
+    "Secondary Pneumothorax from COPD",
+    ],
+    "pleural thickening": [
+    "Asbestos-related Pleural Disease",
+    "Previous Empyema",
+    "Tuberculosis",
+    "Malignant Mesothelioma",
+    ],
+    "hernia": [
+    "Hiatal Hernia",
+    "Diaphragmatic Hernia",
+    "Bochdalek Hernia",
+    "Morgagni Hernia",
+    ],
+    "nodule": [
+    "Benign Pulmonary Nodule",
+    "Primary Lung Cancer",
+    "Metastatic Nodule",
+    "Granuloma",
+    "Hamartoma",
+],
 }
 
 XRAY_FINDINGS = [
