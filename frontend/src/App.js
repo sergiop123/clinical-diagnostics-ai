@@ -126,9 +126,9 @@ function App() {
           </div>
         </nav>
         <div style={styles.trademark}>
-          <div style={{color: "rgba(255,255,255,0.6)", fontSize: "12px", fontWeight: "500", marginBottom: "2px"}}>Clinical Diagnostics AI™</div>
-          <div>© 2026 Jade Global, Inc.</div>
-          <div>All rights reserved.</div>
+          <div style={{color: "rgba(255,255,255,0.6)", fontSize: "11px", fontWeight: "500", marginBottom: "4px", borderTop: "1px solid rgba(255,255,255,0.2)", paddingTop: "12px"}}>Clinical Diagnostics AI™</div>
+          <div style={{color: "rgba(255,255,255,0.4)", fontSize: "10px", marginBottom: "2px"}}>© 2026 Jade Global, Inc.</div>
+          <div style={{color: "rgba(255,255,255,0.4)", fontSize: "10px"}}>All rights reserved.</div>
         </div>
       </div>
 
@@ -445,6 +445,7 @@ navIcon: {
     color: "rgba(255,255,255,0.4)",
     fontSize: "11px",
     textAlign: "center",
+    paddingBottom: "8px",
   },
   main: {
     marginLeft: "260px",
