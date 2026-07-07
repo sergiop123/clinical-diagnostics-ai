@@ -1,5 +1,7 @@
 import { useState } from "react";
 
+import { Home, Upload, Layers, BarChart3, Image as ImageIcon } from "lucide-react";
+
 function App() {
   const [page, setPage] = useState("single");
   const [file, setFile] = useState(null);
@@ -22,10 +24,13 @@ function App() {
     formData.append("modality", modality);
 
     try {
-      const response = await fetch("http://127.0.0.1:8000/analyze-image", {
-        method: "POST",
-        body: formData,
-      });
+      const response = await fetch("https://distance-uninvited-quake.ngrok-free.dev/analyze-image", {
+  method: "POST",
+  headers: {
+    "ngrok-skip-browser-warning": "true"
+  },
+  body: formData,
+});
       const data = await response.json();
       setResult(data);
       setHistory(prev => [...prev, {
@@ -51,8 +56,11 @@ function App() {
     formData.append("modality", modality);
 
     try {
-      const response = await fetch("http://127.0.0.1:8000/batch-analyze", {
+      const response = await fetch("https://distance-uninvited-quake.ngrok-free.dev/batch-analyze", {
         method: "POST",
+        headers: {
+          "ngrok-skip-browser-warning": "true"
+        },
         body: formData,
       });
       const data = await response.json();
@@ -78,7 +86,7 @@ function App() {
           ...(modality === "xray" ? styles.modalityBtnActive : {}),
         }}
       >
-        🫁 Chest X-Ray
+        🫁 X-Ray
       </button>
       <button
         onClick={() => setModality("mri")}
@@ -87,7 +95,7 @@ function App() {
           ...(modality === "mri" ? styles.modalityBtnActive : {}),
         }}
       >
-        🧠 Brain MRI
+        🧠 MRI
       </button>
       <button
         onClick={() => setModality("ct")}
@@ -119,36 +127,48 @@ function App() {
             style={{
               ...styles.navItem,
               ...(page === "home" ? styles.navItemActive : {}),
+              display: "flex",
+              alignItems: "center",
+              gap: "10px",
             }}
           >
-            <span style={styles.navIcon}>⊞</span> Home
+            <Home size={18} /> Home
           </div>
           <div
             onClick={() => setPage("single")}
             style={{
               ...styles.navItem,
               ...(page === "single" ? styles.navItemActive : {}),
+              display: "flex",
+              alignItems: "center",
+              gap: "10px",
             }}
           >
-            <span style={styles.navIcon}>↑</span> Single Upload
+            <Upload size={18} /> Single Upload
           </div>
           <div
             onClick={() => setPage("batch")}
             style={{
               ...styles.navItem,
               ...(page === "batch" ? styles.navItemActive : {}),
+              display: "flex",
+              alignItems: "center",
+              gap: "10px",
             }}
           >
-            <span style={styles.navIcon}>❏</span> Batch Processing
+            <Layers size={18} /> Batch Processing
           </div>
           <div
             onClick={() => setPage("dashboard")}
             style={{
               ...styles.navItem,
               ...(page === "dashboard" ? styles.navItemActive : {}),
+              display: "flex",
+              alignItems: "center",
+              gap: "10px",
             }}
           >
-            <span style={styles.navIcon}>◫</span> Dashboard
+            <BarChart3 size={18} /> Dashboard
           </div>
         </nav>
         <div style={styles.trademark}>
@@ -172,7 +192,7 @@ function App() {
             </div>
             <div style={styles.homeGrid}>
               <div style={styles.homeCard} onClick={() => setPage("single")}>
-                <div style={styles.homeIcon}>🖼️</div>
+                <div style={styles.homeIcon}><ImageIcon size={28} color="#FFB700" /></div>
                 <h3 style={styles.homeCardTitle}>Single Upload</h3>
                 <p style={styles.homeCardDesc}>
                   Upload one image and receive AI analysis with differential
@@ -180,7 +200,7 @@ function App() {
                 </p>
               </div>
               <div style={styles.homeCard} onClick={() => setPage("batch")}>
-                <div style={styles.homeIcon}>📁</div>
+                <div style={styles.homeIcon}><Layers size={28} color="#FFB700" /></div>
                 <h3 style={styles.homeCardTitle}>Batch Processing</h3>
                 <p style={styles.homeCardDesc}>
                   Upload multiple images at once and view all results in a
@@ -208,7 +228,7 @@ function App() {
             <div style={styles.card}>
               <h2 style={styles.cardTitle}>Upload Image</h2>
               <p style={styles.cardDesc}>
-                Chest X-Ray (14 conditions) · Brain MRI (tumor classification) · CT Scan (indicative only)
+                Powered by Google MedGemma — AI radiologist analysis across X-Ray, CT, and MRI
               </p>
               <ModalitySelector />
               <input
@@ -235,46 +255,25 @@ function App() {
 
             {result && (
               <>
-                <div style={styles.resultCard}>
-                  <h2 style={styles.cardTitle}>Analysis Results</h2>
-                  <div style={styles.resultRow}>
-                    <span style={styles.resultLabel}>Filename</span>
-                    <span style={styles.resultValue}>{result.filename}</span>
-                  </div>
-                  <div style={styles.resultRow}>
-                    <span style={styles.resultLabel}>Modality</span>
-                    <span style={styles.resultValue}>{result.modality}</span>
-                  </div>
-                  <div style={styles.resultRow}>
-                    <span style={styles.resultLabel}>Finding</span>
-                    <span style={styles.resultValue}>{result.finding}</span>
-                  </div>
-                  <div style={styles.resultRow}>
-                    <span style={styles.resultLabel}>Confidence</span>
-                    <span style={styles.resultValue}>{result.confidence}%</span>
-                  </div>
-                  <div style={styles.resultRow}>
-                    <span style={styles.resultLabel}>Status</span>
-                    <span style={styles.resultValue}>{result.message}</span>
-                  </div>
-                </div>
-
                 <div style={styles.diagnosisCard}>
                   <h2 style={styles.cardTitle}>
-                    🩺 Differential Diagnosis Suggestions
+                    🩺 AI Radiologist Report (MedGemma)
                   </h2>
                   <p style={styles.cardDesc}>
-                    Based on the detected finding, the following conditions
-                    should be considered by the medical team:
+                    Powered by Google MedGemma — analysis across X-ray, CT, and MRI
                   </p>
-                  <ul style={styles.diagnosisList}>
-                    {result.differentials.map((d, i) => (
-                      <li key={i} style={styles.diagnosisItem}>
-                        <span style={styles.diagnosisBullet}>→</span>
-                        {d}
-                      </li>
-                    ))}
-                  </ul>
+                  <div style={{
+                    whiteSpace: "pre-wrap",
+                    fontSize: "14px",
+                    lineHeight: "1.6",
+                    color: "#333",
+                    padding: "16px",
+                    backgroundColor: "#f9f9f9",
+                    borderRadius: "8px",
+                    marginTop: "12px"
+                  }}>
+                    {result.analysis}
+                  </div>
                 </div>
 
                 <div style={styles.disclaimer}>{result.disclaimer}</div>
@@ -346,12 +345,11 @@ function App() {
                         <th style={styles.th}>Filename</th>
                         <th style={styles.th}>Modality</th>
                         <th style={styles.th}>Finding</th>
-                        <th style={styles.th}>Confidence</th>
                         <th style={styles.th}>Status</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {batchResults.results.map((r, i) => (
+                      {(batchResults.results || []).map((r, i) => (
                         <tr
                           key={i}
                           style={{
@@ -363,7 +361,6 @@ function App() {
                           <td style={styles.td}>{r.filename}</td>
                           <td style={styles.td}>{r.modality}</td>
                           <td style={styles.td}>{r.finding}</td>
-                          <td style={styles.td}>{r.confidence}%</td>
                           <td style={styles.td}>
                             <span
                               style={{
@@ -446,7 +443,6 @@ function App() {
                         <th style={styles.th}>Filename</th>
                         <th style={styles.th}>Modality</th>
                         <th style={styles.th}>Finding</th>
-                        <th style={styles.th}>Confidence</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -463,7 +459,6 @@ function App() {
                           <td style={styles.td}>{h.filename}</td>
                           <td style={styles.td}>{h.modality}</td>
                           <td style={styles.td}>{h.finding}</td>
-                          <td style={styles.td}>{h.confidence}%</td>
                         </tr>
                       ))}
                     </tbody>

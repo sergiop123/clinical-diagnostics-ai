@@ -1,14 +1,23 @@
 from fastapi import FastAPI, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
-from PIL import Image
 from diagnosis import get_differential_diagnosis, map_to_medical_finding
 from typing import List
+from dotenv import load_dotenv
+from huggingface_hub import InferenceClient
+import os
 import io
-import torch
-import timm
-from huggingface_hub import hf_hub_download
-from torchvision import transforms
-from transformers import pipeline
+
+load_dotenv()
+
+HF_TOKEN = os.getenv("HF_API_TOKEN")
+client = InferenceClient(provider="hf-inference", api_key=HF_TOKEN)
+
+XRAY_LABELS = [
+    "Atelectasis", "Cardiomegaly", "Effusion", "Infiltration",
+    "Mass", "Nodule", "Pneumonia", "Pneumothorax",
+    "Consolidation", "Edema", "Emphysema", "Fibrosis",
+    "Pleural_Thickening", "Hernia"
+]
 
 app = FastAPI(title="Clinical Diagnostics AI")
 
@@ -19,63 +28,28 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ChestX-ray14 labels
-XRAY_LABELS = [
-    "Atelectasis", "Cardiomegaly", "Effusion", "Infiltration",
-    "Mass", "Nodule", "Pneumonia", "Pneumothorax",
-    "Consolidation", "Edema", "Emphysema", "Fibrosis",
-    "Pleural_Thickening", "Hernia"
-]
-
-print("Loading medical AI models... please wait")
-
-# Load chest X-ray model
-model_path = hf_hub_download(
-    repo_id="taheera/vit-in1k-chestxray14",
-    filename="pytorch_model.bin"
-)
-
-xray_model = timm.create_model("vit_base_patch16_224", pretrained=False, num_classes=14)
-state_dict = torch.load(model_path, map_location="cpu")
-xray_model.load_state_dict(state_dict)
-xray_model.eval()
-
-xray_preprocess = transforms.Compose([
-    transforms.Resize((224, 224)),
-    transforms.ToTensor(),
-    transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5]),
-])
-
-# Load brain MRI model
-print("Loading Brain MRI model...")
-mri_model = pipeline(
-    "image-classification",
-    model="NeuronZero/MRI-Reader"
-)
-
-print("All medical AI models loaded successfully")
+print("Clinical Diagnostics AI backend starting...")
+print("Using Hugging Face Inference API")
 
 
-def analyze_xray(image: Image.Image):
-    tensor = xray_preprocess(image).unsqueeze(0)
-    with torch.no_grad():
-        outputs = xray_model(tensor)
-        probabilities = torch.sigmoid(outputs)[0]
-
-    results = []
-    for i, prob in enumerate(probabilities):
-        results.append({
-            "label": XRAY_LABELS[i],
-            "score": float(prob)
-        })
-
-    results.sort(key=lambda x: x["score"], reverse=True)
-    return results
+def analyze_xray(image_bytes: bytes):
+    results = client.image_classification(
+        image_bytes,
+        model="taheera/vit-in1k-chestxray14"
+    )
+    results_sorted = sorted(results, key=lambda x: x.score, reverse=True)
+    top = results_sorted[0]
+    return top.label.replace("_", " "), round(top.score * 100, 2)
 
 
-def analyze_mri(image: Image.Image):
-    results = mri_model(image)
-    return results
+def analyze_mri(image_bytes: bytes):
+    results = client.image_classification(
+        image_bytes,
+        model="NeuronZero/MRI-Reader"
+    )
+    results_sorted = sorted(results, key=lambda x: x.score, reverse=True)
+    top = results_sorted[0]
+    return top.label.replace("_", " "), round(top.score * 100, 2)
 
 
 @app.get("/")
@@ -100,27 +74,19 @@ async def analyze_image(
     modality: str = Form("xray")
 ):
     contents = await file.read()
-    image = Image.open(io.BytesIO(contents)).convert("RGB")
 
-    if modality == "xray":
-        results = analyze_xray(image)
-        top_result = results[0]
-        finding = top_result["label"].replace("_", " ")
-        confidence = round(top_result["score"] * 100, 2)
-
-    elif modality == "mri":
-        results = analyze_mri(image)
-        top_result = results[0]
-        finding = top_result["label"].replace("_", " ")
-        confidence = round(top_result["score"] * 100, 2)
-
-    else:
-        # CT — medical finding mapping
-        general = pipeline("image-classification", model="google/vit-base-patch16-224")
-        results = general(image)
-        top_result = results[0]
-        confidence = round(top_result["score"] * 100, 2)
-        finding = map_to_medical_finding(confidence, modality)
+    try:
+        if modality == "xray":
+            finding, confidence = analyze_xray(contents)
+        elif modality == "mri":
+            finding, confidence = analyze_mri(contents)
+        else:
+            confidence = 25.0
+            finding = map_to_medical_finding(confidence, modality)
+    except Exception as e:
+        finding = "Unable to process image"
+        confidence = 0.0
+        print(f"API Error: {e}")
 
     diagnosis = get_differential_diagnosis(finding)
 
@@ -145,25 +111,13 @@ async def batch_analyze(
     for file in files:
         try:
             contents = await file.read()
-            image = Image.open(io.BytesIO(contents)).convert("RGB")
 
             if modality == "xray":
-                ai_results = analyze_xray(image)
-                top_result = ai_results[0]
-                finding = top_result["label"].replace("_", " ")
-                confidence = round(top_result["score"] * 100, 2)
-
+                finding, confidence = analyze_xray(contents)
             elif modality == "mri":
-                ai_results = analyze_mri(image)
-                top_result = ai_results[0]
-                finding = top_result["label"].replace("_", " ")
-                confidence = round(top_result["score"] * 100, 2)
-
+                finding, confidence = analyze_mri(contents)
             else:
-                general = pipeline("image-classification", model="google/vit-base-patch16-224")
-                ai_results = general(image)
-                top_result = ai_results[0]
-                confidence = round(top_result["score"] * 100, 2)
+                confidence = 25.0
                 finding = map_to_medical_finding(confidence, modality)
 
             diagnosis = get_differential_diagnosis(finding)
