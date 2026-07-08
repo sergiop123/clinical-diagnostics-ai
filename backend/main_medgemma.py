@@ -11,6 +11,7 @@
 # ============================================================
 
 from fastapi import FastAPI, UploadFile, File, Form
+from db import init_db, save_result, get_history
 from fastapi.middleware.cors import CORSMiddleware
 from transformers import AutoProcessor, AutoModelForImageTextToText
 from typing import List
@@ -28,6 +29,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+init_db()
 # ---------- LOAD MEDGEMMA MODEL ----------
 # Requires Hugging Face access to google/medgemma-4b-it
 # Set your token as an environment variable: HF_TOKEN
@@ -101,6 +103,9 @@ async def analyze_image(file: UploadFile = File(...), modality: str = Form("xray
     contents = await file.read()
     image = Image.open(io.BytesIO(contents)).convert("RGB")
     analysis = analyze_with_medgemma(image, modality)
+    # Save a short summary of the finding to the database
+    summary = extract_summary(analysis)
+    save_result(file.filename, modality.upper(), summary)
     return {
         "filename": file.filename,
         "modality": modality.upper(),
@@ -118,6 +123,7 @@ async def batch_analyze(files: List[UploadFile] = File(...), modality: str = For
             image = Image.open(io.BytesIO(contents)).convert("RGB")
             analysis = analyze_with_medgemma(image, modality, brief=True)
             summary = extract_summary(analysis)
+            save_result(file.filename, modality.upper(), summary)
             results.append({
                 "filename": file.filename,
                 "modality": modality.upper(),
@@ -138,3 +144,7 @@ async def batch_analyze(files: List[UploadFile] = File(...), modality: str = For
         "results": results,
         "disclaimer": "For educational purposes only. Not a medical diagnosis."
     }
+
+@app.get("/history")
+def history():
+    return {"history": get_history()}

@@ -1,4 +1,5 @@
 from fastapi import FastAPI, UploadFile, File, Form
+from db import init_db, save_result, get_history
 from fastapi.middleware.cors import CORSMiddleware
 from diagnosis import get_differential_diagnosis, map_to_medical_finding
 from typing import List
@@ -27,6 +28,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+init_db()
 
 print("Clinical Diagnostics AI backend starting...")
 print("Using Hugging Face Inference API")
@@ -90,6 +93,9 @@ async def analyze_image(
 
     diagnosis = get_differential_diagnosis(finding)
 
+    # Save result to database
+    save_result(file.filename, modality.upper(), finding)
+
     return {
         "filename": file.filename,
         "modality": modality.upper(),
@@ -146,3 +152,7 @@ async def batch_analyze(
         "results": results,
         "disclaimer": "For educational purposes only. Not a medical diagnosis.",
     }
+
+@app.get("/history")
+def history():
+    return {"history": get_history()}
