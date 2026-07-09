@@ -33,10 +33,26 @@ function App() {
 });
       const data = await response.json();
       setResult(data);
-      setHistory(prev => [...prev, {
-        ...data,
-        timestamp: new Date().toLocaleString()
-      }]);
+
+// Extract a short finding from the full analysis for the dashboard
+let shortFinding = "See full report";
+if (data.analysis) {
+  const lines = data.analysis.split("\n");
+  for (let line of lines) {
+    const clean = line.replace(/[*#]/g, "").trim();
+    if (clean.length > 15 && !clean.toLowerCase().startsWith("okay")) {
+      shortFinding = clean.slice(0, 70);
+      break;
+    }
+  }
+}
+
+setHistory(prev => [...prev, {
+  filename: data.filename,
+  modality: data.modality,
+  finding: shortFinding,
+  timestamp: new Date().toLocaleString()
+}]);
     } catch (err) {
       setError("Could not connect to the backend. Make sure FastAPI is running.");
     }
@@ -414,13 +430,13 @@ function App() {
                 <div style={styles.metricNumber}>
                   {history.filter(h => h.modality === "XRAY").length}
                 </div>
-                <div style={styles.metricLabel}>Chest X-Rays</div>
+                <div style={styles.metricLabel}>X-Rays</div>
               </div>
               <div style={styles.metricCard}>
                 <div style={styles.metricNumber}>
                   {history.filter(h => h.modality === "MRI").length}
                 </div>
-                <div style={styles.metricLabel}>Brain MRIs</div>
+                <div style={styles.metricLabel}>MRIs</div>
               </div>
               <div style={styles.metricCard}>
                 <div style={styles.metricNumber}>
