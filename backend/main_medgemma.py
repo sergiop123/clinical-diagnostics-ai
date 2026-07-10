@@ -54,12 +54,13 @@ def analyze_with_medgemma(image, modality, brief=False):
         max_tokens = 50
     else:
         modality_prompts = {
-            "xray": "Describe the findings in this chest X-ray and list possible diagnoses.",
-            "mri": "Describe the findings in this brain MRI and list possible diagnoses.",
-            "ct": "Describe the findings in this CT scan and list possible diagnoses."
+            "xray": "Analyze this X-ray. Give one short line of key findings, then list the top 3 possible diagnoses as a numbered list. Keep it brief.",
+            "mri": "Analyze this MRI. Give one short line of key findings, then list the top 3 possible diagnoses as a numbered list. Keep it brief.",
+            "ct": "Analyze this CT scan. Give one short line of key findings, then list the top 3 possible diagnoses as a numbered list. Keep it brief."
         }
         prompt = modality_prompts.get(modality, modality_prompts["xray"])
-        max_tokens = 400
+        max_tokens = 200
+    
 
     messages = [
         {"role": "system", "content": [{"type": "text", "text": "You are an expert radiologist."}]},
