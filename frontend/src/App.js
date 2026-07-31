@@ -14,19 +14,24 @@ function App() {
   const [history, setHistory] = useState([]);
 
   useEffect(() => {
-    if (page === "dashboard") {
-      fetch("https://distance-uninvited-quake.ngrok-free.dev/history", {
-        headers: { "ngrok-skip-browser-warning": "true" }
+  if (page === "dashboard") {
+    setLoading(true);
+    fetch("https://distance-uninvited-quake.ngrok-free.dev/history", {
+      headers: { "ngrok-skip-browser-warning": "true" }
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (data.history) {
+          setHistory(data.history);
+        }
+        setLoading(false);
       })
-        .then(res => res.json())
-        .then(data => {
-          if (data.history) {
-            setHistory(data.history);
-          }
-        })
-        .catch(err => console.error("History fetch error:", err));
-    }
-  }, [page]);
+      .catch(err => {
+        console.error("History fetch error:", err);
+        setLoading(false);
+      });
+  }
+}, [page]);
 
   const handleSingleUpload = async () => {
     if (!file) return;
@@ -431,7 +436,7 @@ setHistory(prev => [...prev, {
             <div style={styles.header}>
               <h1 style={styles.title}>Dashboard</h1>
               <p style={styles.subtitle}>
-                Session analytics — {history.length} image{history.length !== 1 ? "s" : ""} analyzed
+                {loading ? "Loading from Snowflake..." : `${history.length} image${history.length !== 1 ? "s" : ""} analyzed — powered by Snowflake`}
               </p>
             </div>
 
