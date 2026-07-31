@@ -128,6 +128,9 @@ async def batch_analyze(
 
             diagnosis = get_differential_diagnosis(finding)
 
+            # Save result to database (previously missing from batch endpoint)
+            save_result(file.filename, modality.upper(), finding)
+
             results.append({
                 "filename": file.filename,
                 "modality": modality.upper(),

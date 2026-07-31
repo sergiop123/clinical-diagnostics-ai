@@ -9,3 +9,4 @@ timm
 huggingface_hub
 python-dotenv
 requests
+snowflake-connector-python

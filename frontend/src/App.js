@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 import { Home, Upload, Layers, BarChart3, Image as ImageIcon } from "lucide-react";
 
@@ -12,6 +12,21 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [history, setHistory] = useState([]);
+
+  useEffect(() => {
+    if (page === "dashboard") {
+      fetch("https://distance-uninvited-quake.ngrok-free.dev/history", {
+        headers: { "ngrok-skip-browser-warning": "true" }
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (data.history) {
+            setHistory(data.history);
+          }
+        })
+        .catch(err => console.error("History fetch error:", err));
+    }
+  }, [page]);
 
   const handleSingleUpload = async () => {
     if (!file) return;
@@ -292,7 +307,7 @@ setHistory(prev => [...prev, {
                   </div>
                 </div>
 
-                <div style={styles.disclaimer}>{result.disclaimer}</div>
+                <div style={styles.disclaimer}>⚠️ For educational purposes only. Not a medical diagnosis. All results must be reviewed by a licensed medical professional.</div>
               </>
             )}
 
@@ -492,8 +507,7 @@ setHistory(prev => [...prev, {
             )}
 
             <div style={styles.disclaimer}>
-              ⚠️ Dashboard shows current session only. Persistent history will
-              be available after database integration is complete.
+              ⚠️ Analysis history powered by Snowflake. For educational purposes only — not a medical diagnosis.
             </div>
           </>
         )}

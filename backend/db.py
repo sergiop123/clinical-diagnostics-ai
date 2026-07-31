@@ -65,30 +65,47 @@ def _sqlite_history():
 
 
 # ============================================================
-# SNOWFLAKE IMPLEMENTATION (ready for credentials)
+# SNOWFLAKE IMPLEMENTATION
 # ============================================================
+def _snowflake_connect():
+    import snowflake.connector
+    return snowflake.connector.connect(
+        account=os.getenv("SNOWFLAKE_ACCOUNT"),
+        user=os.getenv("SNOWFLAKE_USER"),
+        password=os.getenv("SNOWFLAKE_PASSWORD"),
+        warehouse=os.getenv("SNOWFLAKE_WAREHOUSE"),
+        database=os.getenv("SNOWFLAKE_DATABASE"),
+        schema=os.getenv("SNOWFLAKE_SCHEMA"),
+    )
+
+
 def _snowflake_save(filename, modality, finding):
-    # import snowflake.connector
-    # conn = snowflake.connector.connect(
-    #     account=os.getenv("SNOWFLAKE_ACCOUNT"),
-    #     user=os.getenv("SNOWFLAKE_USER"),
-    #     password=os.getenv("SNOWFLAKE_PASSWORD"),
-    #     warehouse=os.getenv("SNOWFLAKE_WAREHOUSE"),
-    #     database=os.getenv("SNOWFLAKE_DATABASE"),
-    #     schema=os.getenv("SNOWFLAKE_SCHEMA"),
-    # )
-    # cursor = conn.cursor()
-    # cursor.execute(
-    #     "INSERT INTO analysis_results (filename, modality, finding, timestamp) VALUES (%s, %s, %s, %s)",
-    #     (filename, modality, finding, datetime.now().isoformat())
-    # )
-    # conn.commit()
-    # conn.close()
-    raise NotImplementedError("Snowflake credentials required. Awaiting Jade Global access.")
+    conn = _snowflake_connect()
+    try:
+        cursor = conn.cursor()
+        cursor.execute(
+            "INSERT INTO analysis_results (filename, modality, finding, timestamp) VALUES (%s, %s, %s, %s)",
+            (filename, modality, finding, datetime.now().isoformat())
+        )
+        conn.commit()
+    finally:
+        conn.close()
 
 
 def _snowflake_history():
-    raise NotImplementedError("Snowflake credentials required. Awaiting Jade Global access.")
+    conn = _snowflake_connect()
+    try:
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT filename, modality, finding, timestamp FROM analysis_results ORDER BY id DESC"
+        )
+        rows = cursor.fetchall()
+        return [
+            {"filename": r[0], "modality": r[1], "finding": r[2], "timestamp": r[3]}
+            for r in rows
+        ]
+    finally:
+        conn.close()
 
 
 # ============================================================
