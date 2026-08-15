@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 
 import { Home, Upload, Layers, BarChart3, Image as ImageIcon } from "lucide-react";
 
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+
 function App() {
   const [page, setPage] = useState("single");
   const [file, setFile] = useState(null);
@@ -33,6 +35,36 @@ function App() {
   }
 }, [page]);
 
+const getConfidenceScore = (analysis) => {
+  if (!analysis) return null;
+  const lower = analysis.toLowerCase();
+  if (lower.includes("confidence: high")) return { label: "High", score: 87, color: "#1e7e34", bg: "#e6f4ea" };
+  if (lower.includes("confidence: moderate")) return { label: "Moderate", score: 62, color: "#8A6000", bg: "#FFF8E6" };
+  if (lower.includes("confidence: low")) return { label: "Low", score: 28, color: "#c62828", bg: "#fce8e6" };
+  return null;
+};
+
+const exportToCSV = () => {
+  const headers = ["#", "Timestamp", "Filename", "Modality", "Finding"];
+  const rows = history.map((h, i) => [
+    i + 1,
+    h.timestamp,
+    h.filename,
+    h.modality,
+    h.finding
+  ]);
+  const csvContent = [headers, ...rows]
+    .map(row => row.map(val => `"${val}"`).join(","))
+    .join("\n");
+  const blob = new Blob([csvContent], { type: "text/csv" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `clinical_diagnostics_${new Date().toISOString().split("T")[0]}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+};
+
   const handleSingleUpload = async () => {
     if (!file) return;
     setLoading(true);
@@ -46,9 +78,6 @@ function App() {
     try {
       const response = await fetch("https://distance-uninvited-quake.ngrok-free.dev/analyze-image", {
   method: "POST",
-  headers: {
-    "ngrok-skip-browser-warning": "true"
-  },
   body: formData,
 });
       const data = await response.json();
@@ -298,21 +327,71 @@ setHistory(prev => [...prev, {
                   <p style={styles.cardDesc}>
                     Powered by Google MedGemma — analysis across X-ray, CT, and MRI
                   </p>
-                  <div style={{
-                    whiteSpace: "pre-wrap",
-                    fontSize: "14px",
-                    lineHeight: "1.6",
-                    color: "#333",
-                    padding: "16px",
-                    backgroundColor: "#f9f9f9",
-                    borderRadius: "8px",
-                    marginTop: "12px"
-                  }}>
-                    {result.analysis}
+                  {(() => {
+                    const conf = getConfidenceScore(result.analysis);
+                    console.log("Conf:", conf);
+                    return conf ? (
+                      <div style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "12px",
+                        padding: "12px 16px",
+                        background: conf.bg,
+                        borderRadius: "8px",
+                        marginBottom: "12px",
+                        border: `1px solid ${conf.color}`
+                      }}>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontSize: "12px", color: conf.color, fontWeight: "600", marginBottom: "4px" }}>
+                            AI CONFIDENCE SCORE
+                          </div>
+                          <div style={{ height: "8px", background: "#e0e0e0", borderRadius: "4px", overflow: "hidden" }}>
+                            <div style={{ width: `${conf.score}%`, height: "100%", background: conf.color, borderRadius: "4px", transition: "width 0.5s ease" }} />
+                          </div>
+                        </div>
+                        <div style={{ textAlign: "right" }}>
+                          <div style={{ fontSize: "24px", fontWeight: "bold", color: conf.color }}>{conf.score}%</div>
+                          <div style={{ fontSize: "12px", color: conf.color }}>{conf.label}</div>
+                        </div>
+                      </div>
+                    ) : null;
+                  })()}
+                  <div style={{ marginTop: "12px" }}>
+  {result.analysis && result.analysis.split("\n").filter(line => line.trim()).map((line, i) => {
+    const isKeyFinding = line.toLowerCase().includes("key finding");
+    const isConfidence = line.toLowerCase().includes("confidence");
+    const isDiagnosis = /^\d+\./.test(line.trim());
+    const isDiagnosesHeader = line.toLowerCase().includes("diagnoses");
+
+    if (isKeyFinding) return (
+      <div key={i} style={{ background: "#EBF4FF", borderLeft: "4px solid #1B5287", padding: "10px 14px", borderRadius: "6px", marginBottom: "10px", fontSize: "14px", color: "#1B5287", fontWeight: "500" }}>
+        🔍 {line}
+      </div>
+    );
+    if (isConfidence) return null;
+    if (isDiagnosesHeader) return (
+      <div key={i} style={{ fontSize: "13px", fontWeight: "600", color: "#1B5287", marginBottom: "6px", marginTop: "4px" }}>
+        {line}
+      </div>
+    );
+    if (isDiagnosis) return (
+      <div key={i} style={{ display: "flex", alignItems: "center", gap: "8px", padding: "8px 12px", background: "#f9f9f9", borderRadius: "6px", marginBottom: "6px", fontSize: "13px", color: "#333" }}>
+        <span style={{ color: "#FFB700", fontWeight: "bold", fontSize: "16px" }}>→</span>
+        {line}
+      </div>
+    );
+    return (
+      <div key={i} style={{ fontSize: "13px", color: "#555", marginBottom: "6px", paddingLeft: "4px" }}>
+        {line}
+      </div>
+    );
+  })}
                   </div>
                 </div>
 
-                <div style={styles.disclaimer}>⚠️ For educational purposes only. Not a medical diagnosis. All results must be reviewed by a licensed medical professional.</div>
+                <div style={styles.disclaimer}>
+                  ⚠️ For educational purposes only. Not a medical diagnosis. All results must be reviewed by a licensed medical professional.
+                </div>
               </>
             )}
 
@@ -381,6 +460,7 @@ setHistory(prev => [...prev, {
                         <th style={styles.th}>Filename</th>
                         <th style={styles.th}>Modality</th>
                         <th style={styles.th}>Finding</th>
+                        <th style={styles.th}>Confidence</th>
                         <th style={styles.th}>Status</th>
                       </tr>
                     </thead>
@@ -396,17 +476,34 @@ setHistory(prev => [...prev, {
                           <td style={styles.td}>{i + 1}</td>
                           <td style={styles.td}>{r.filename}</td>
                           <td style={styles.td}>{r.modality}</td>
-                          <td style={styles.td}>{r.finding}</td>
                           <td style={styles.td}>
-                            <span
-                              style={{
-                                ...styles.statusBadge,
-                                backgroundColor:
-                                  r.status === "Success" ? "#e6f4ea" : "#fce8e6",
-                                color:
-                                  r.status === "Success" ? "#1e7e34" : "#c62828",
-                              }}
-                            >
+                            <div>{r.finding}</div>
+                            {r.analysis && (
+                              <div style={{ fontSize: "11px", color: "#888", marginTop: "4px", fontStyle: "italic" }}>
+                                {r.analysis.split("\n").filter(l => l.trim()).slice(0, 3).join(" · ")}
+                              </div>
+                            )}
+                          </td>
+                          <td style={styles.td}>
+                            {r.confidence && (
+                              <span style={{
+                                padding: "3px 8px",
+                                borderRadius: "12px",
+                                fontSize: "12px",
+                                fontWeight: "500",
+                                backgroundColor: r.confidence === "High" ? "#e6f4ea" : r.confidence === "Low" ? "#fce8e6" : "#FFF8E6",
+                                color: r.confidence === "High" ? "#1e7e34" : r.confidence === "Low" ? "#c62828" : "#8A6000"
+                              }}>
+                                {r.confidence}
+                              </span>
+                            )}
+                          </td>
+                          <td style={styles.td}>
+                            <span style={{
+                              ...styles.statusBadge,
+                              backgroundColor: r.status === "Success" ? "#e6f4ea" : "#fce8e6",
+                              color: r.status === "Success" ? "#1e7e34" : "#c62828",
+                            }}>
                               {r.status}
                             </span>
                           </td>
@@ -450,6 +547,7 @@ setHistory(prev => [...prev, {
                 <div style={styles.metricNumber}>
                   {history.filter(h => h.modality === "XRAY").length}
                 </div>
+                
                 <div style={styles.metricLabel}>X-Rays</div>
               </div>
               <div style={styles.metricCard}>
@@ -465,11 +563,51 @@ setHistory(prev => [...prev, {
                 <div style={styles.metricLabel}>CT Scans</div>
               </div>
             </div>
-
+            {history.length > 0 && (
+              <div style={styles.resultCard}>
+                <h2 style={styles.cardTitle}>Analysis by Modality</h2>
+                <ResponsiveContainer width="100%" height={250}>
+                  <BarChart
+                    data={[
+                      { modality: "X-Ray", count: history.filter(h => h.modality === "XRAY").length },
+                      { modality: "MRI", count: history.filter(h => h.modality === "MRI").length },
+                      { modality: "CT Scan", count: history.filter(h => h.modality === "CT").length },
+                    ]}
+                    margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                    <XAxis dataKey="modality" tick={{ fontSize: 13, fill: "#1B5287", fontWeight: 500 }} />
+                    <YAxis tick={{ fontSize: 12, fill: "#888" }} allowDecimals={false} />
+                    <Tooltip
+                      formatter={(value) => [value, "Analyses"]}
+                      contentStyle={{ borderRadius: "8px", border: "1px solid #E2E8F0" }}
+                    />
+                    <Bar dataKey="count" fill="#1B5287" radius={[6, 6, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            )}
             {/* History table */}
             {history.length > 0 ? (
               <div style={styles.resultCard}>
-                <h2 style={styles.cardTitle}>Analysis History</h2>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+  <h2 style={styles.cardTitle}>Analysis History</h2>
+  <button
+    onClick={exportToCSV}
+    style={{
+      padding: "8px 16px",
+      backgroundColor: "#FFB700",
+      color: "#1B5287",
+      border: "none",
+      borderRadius: "8px",
+      fontWeight: "bold",
+      fontSize: "13px",
+      cursor: "pointer",
+    }}
+  >
+    ⬇ Export CSV
+  </button>
+</div>
                 <div style={styles.tableWrapper}>
                   <table style={styles.table}>
                     <thead>
