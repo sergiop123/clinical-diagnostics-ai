@@ -443,6 +443,21 @@ setHistory(prev => [...prev, {
         {line}
       </div>
     );
+        const isDiseaseInfo = line.toLowerCase().includes("disease info:");
+    if (isDiseaseInfo) return (
+      <div key={i} style={{ 
+        background: "#FFF8E6", 
+        borderLeft: "4px solid #FFB700", 
+        padding: "10px 14px", 
+        borderRadius: "6px", 
+        marginTop: "10px",
+        fontSize: "13px", 
+        color: "#5a4000",
+        lineHeight: "1.6"
+      }}>
+        📋 {line}
+      </div>
+    );
     return (
       <div key={i} style={{ fontSize: "13px", color: "#555", marginBottom: "6px", paddingLeft: "4px" }}>
         {line}
