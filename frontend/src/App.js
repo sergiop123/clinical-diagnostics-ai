@@ -14,13 +14,15 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [history, setHistory] = useState([]);
+  const [patientName, setPatientName] = useState("");
+  const [patientId, setPatientId] = useState("");
 
   useEffect(() => {
   if (page === "dashboard") {
     setLoading(true);
     fetch("https://distance-uninvited-quake.ngrok-free.dev/history", {
-      headers: { "ngrok-skip-browser-warning": "true" }
-    })
+  headers: { "ngrok-skip-browser-warning": "true" }
+})
       .then(res => res.json())
       .then(data => {
         if (data.history) {
@@ -37,10 +39,26 @@ function App() {
 
 const getConfidenceScore = (analysis) => {
   if (!analysis) return null;
-  const lower = analysis.toLowerCase();
-  if (lower.includes("confidence: high")) return { label: "High", score: 87, color: "#1e7e34", bg: "#e6f4ea" };
-  if (lower.includes("confidence: moderate")) return { label: "Moderate", score: 62, color: "#8A6000", bg: "#FFF8E6" };
-  if (lower.includes("confidence: low")) return { label: "Low", score: 28, color: "#c62828", bg: "#fce8e6" };
+  
+  // Look for percentage in confidence line
+  const lines = analysis.split("\n");
+  for (let line of lines) {
+    if (line.toLowerCase().includes("confidence:")) {
+      const match = line.match(/(\d+)%/);
+      if (match) {
+        const score = parseInt(match[1]);
+        const color = score >= 75 ? "#1e7e34" : score >= 45 ? "#8A6000" : "#c62828";
+        const bg = score >= 75 ? "#e6f4ea" : score >= 45 ? "#FFF8E6" : "#fce8e6";
+        const label = score >= 75 ? "High" : score >= 45 ? "Moderate" : "Low";
+        return { label, score, color, bg };
+      }
+      // Fall back to text-based if no percentage found
+      const lower = line.toLowerCase();
+      if (lower.includes("high")) return { label: "High", score: 87, color: "#1e7e34", bg: "#e6f4ea" };
+      if (lower.includes("moderate")) return { label: "Moderate", score: 62, color: "#8A6000", bg: "#FFF8E6" };
+      if (lower.includes("low")) return { label: "Low", score: 28, color: "#c62828", bg: "#fce8e6" };
+    }
+  }
   return null;
 };
 
@@ -72,12 +90,17 @@ const exportToCSV = () => {
     setResult(null);
 
     const formData = new FormData();
-    formData.append("file", file);
-    formData.append("modality", modality);
+formData.append("file", file);
+formData.append("modality", modality);
+formData.append("patient_name", patientName);
+formData.append("patient_id", patientId);
 
     try {
       const response = await fetch("https://distance-uninvited-quake.ngrok-free.dev/analyze-image", {
   method: "POST",
+  headers: {
+    "ngrok-skip-browser-warning": "true"
+  },
   body: formData,
 });
       const data = await response.json();
@@ -122,12 +145,12 @@ setHistory(prev => [...prev, {
 
     try {
       const response = await fetch("https://distance-uninvited-quake.ngrok-free.dev/batch-analyze", {
-        method: "POST",
-        headers: {
-          "ngrok-skip-browser-warning": "true"
-        },
-        body: formData,
-      });
+  method: "POST",
+  headers: {
+    "ngrok-skip-browser-warning": "true"
+  },
+  body: formData,
+});
       const data = await response.json();
       setBatchResults(data);
       data.results.forEach(r => {
@@ -296,12 +319,38 @@ setHistory(prev => [...prev, {
                 Powered by Google MedGemma — AI radiologist analysis across X-Ray, CT, and MRI
               </p>
               <ModalitySelector />
-              <input
-                type="file"
-                accept="image/*"
-                onChange={(e) => setFile(e.target.files[0])}
-                style={styles.fileInput}
-              />
+<div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", marginBottom: "16px" }}>
+  <div>
+    <label style={{ fontSize: "13px", color: "#1B5287", fontWeight: "500", display: "block", marginBottom: "6px" }}>
+      Patient Name
+    </label>
+    <input
+      type="text"
+      placeholder="Enter patient name"
+      value={patientName}
+      onChange={(e) => setPatientName(e.target.value)}
+      style={{ width: "100%", padding: "10px 12px", border: "1px solid #E2E8F0", borderRadius: "8px", fontSize: "14px", outline: "none" }}
+    />
+  </div>
+  <div>
+    <label style={{ fontSize: "13px", color: "#1B5287", fontWeight: "500", display: "block", marginBottom: "6px" }}>
+      Patient ID
+    </label>
+    <input
+      type="text"
+      placeholder="Enter patient ID"
+      value={patientId}
+      onChange={(e) => setPatientId(e.target.value)}
+      style={{ width: "100%", padding: "10px 12px", border: "1px solid #E2E8F0", borderRadius: "8px", fontSize: "14px", outline: "none" }}
+    />
+  </div>
+</div>
+<input
+  type="file"
+  accept="image/*"
+  onChange={(e) => setFile(e.target.files[0])}
+  style={styles.fileInput}
+/>
               {file && <p style={styles.fileName}>Selected: {file.name}</p>}
               <button
                 onClick={handleSingleUpload}
@@ -358,16 +407,30 @@ setHistory(prev => [...prev, {
                   })()}
                   <div style={{ marginTop: "12px" }}>
   {result.analysis && result.analysis.split("\n").filter(line => line.trim()).map((line, i) => {
-    const isKeyFinding = line.toLowerCase().includes("key finding");
+        const isKeyFinding = line.toLowerCase().includes("key finding");
     const isConfidence = line.toLowerCase().includes("confidence");
     const isDiagnosis = /^\d+\./.test(line.trim());
     const isDiagnosesHeader = line.toLowerCase().includes("diagnoses");
 
-    if (isKeyFinding) return (
-      <div key={i} style={{ background: "#EBF4FF", borderLeft: "4px solid #1B5287", padding: "10px 14px", borderRadius: "6px", marginBottom: "10px", fontSize: "14px", color: "#1B5287", fontWeight: "500" }}>
-        🔍 {line}
-      </div>
-    );
+    if (isKeyFinding) {
+      const isNormal = line.toLowerCase().includes("normal") || 
+                       line.toLowerCase().includes("no acute") ||
+                       line.toLowerCase().includes("disease-free");
+      return (
+        <div key={i} style={{ 
+          background: isNormal ? "#e6f4ea" : "#EBF4FF", 
+          borderLeft: `4px solid ${isNormal ? "#1e7e34" : "#1B5287"}`, 
+          padding: "10px 14px", 
+          borderRadius: "6px", 
+          marginBottom: "10px", 
+          fontSize: "14px", 
+          color: isNormal ? "#1e7e34" : "#1B5287", 
+          fontWeight: "500" 
+        }}>
+          {isNormal ? "✅" : "🔍"} {line}
+        </div>
+      );
+    }
     if (isConfidence) return null;
     if (isDiagnosesHeader) return (
       <div key={i} style={{ fontSize: "13px", fontWeight: "600", color: "#1B5287", marginBottom: "6px", marginTop: "4px" }}>
