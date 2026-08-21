@@ -347,7 +347,7 @@ setHistory(prev => [...prev, {
 </div>
 <input
   type="file"
-  accept="image/*"
+  accept="image/*,.dcm"
   onChange={(e) => setFile(e.target.files[0])}
   style={styles.fileInput}
 />
@@ -500,11 +500,11 @@ setHistory(prev => [...prev, {
               <ModalitySelector />
               <input
                 type="file"
-                accept="image/*"
+                accept="image/*,.dcm"
                 multiple
                 onChange={(e) => setFiles(Array.from(e.target.files))}
                 style={styles.fileInput}
-              />
+                />
               {files.length > 0 && (
                 <p style={styles.fileName}>
                   {files.length} file{files.length > 1 ? "s" : ""} selected
